@@ -1,0 +1,76 @@
+{
+  "random": {
+    "n_features": 68,
+    "counts": {
+      "train": {
+        "Benign": 35059,
+        "Brute Force": 2536,
+        "DDOS": 35088,
+        "DOS": 35095,
+        "Mirai": 14005,
+        "Recon": 34991,
+        "Spoofing": 35014,
+        "Web-Based": 6297
+      },
+      "val": {
+        "Benign": 7496,
+        "Brute Force": 541,
+        "DDOS": 7454,
+        "DOS": 7452,
+        "Mirai": 3008,
+        "Recon": 7488,
+        "Spoofing": 7531,
+        "Web-Based": 1354
+      },
+      "test": {
+        "Benign": 7445,
+        "Brute Force": 542,
+        "DDOS": 7458,
+        "DOS": 7451,
+        "Mirai": 2987,
+        "Recon": 7521,
+        "Spoofing": 7455,
+        "Web-Based": 1349
+      }
+    }
+  },
+  "time": {
+    "n_features": 68,
+    "counts": {
+      "train": {
+        "Benign": 35000,
+        "Brute Force": 2533,
+        "DDOS": 35000,
+        "DOS": 34998,
+        "Mirai": 14000,
+        "Recon": 35000,
+        "Spoofing": 35000,
+        "Web-Based": 6300
+      },
+      "val": {
+        "Benign": 7341,
+        "Brute Force": 538,
+        "DDOS": 7271,
+        "DOS": 7499,
+        "Mirai": 2940,
+        "Recon": 7426,
+        "Spoofing": 7418,
+        "Web-Based": 1340
+      },
+      "test": {
+        "Benign": 7373,
+        "Brute Force": 542,
+        "DDOS": 7179,
+        "DOS": 7488,
+        "Mirai": 2956,
+        "Recon": 7425,
+        "Spoofing": 7384,
+        "Web-Based": 1341
+      }
+    }
+  },
+  "split_time_dropped_twins": {
+    "val": 620,
+    "test": 705
+  }
+}

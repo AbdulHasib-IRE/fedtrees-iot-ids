@@ -2,8 +2,10 @@
 Usage (from the repository root):  python3 compute_statistics.py results benchmark benchmark benchmark statistics.json
   results/   : runs of this study (grid = one-shot ensemble and cyclic boosting, grid_hist = histogram aggregation,
                grid_extra = settings checks and 50-client runs, diag = client class counts and test labels, check = reproduction checks)
-  benchmark/ : files copied from the leak-free benchmark release (doi:10.5281/zenodo.23483716) that hold the federated
-               FA-MLP runs on the same clients and seeds, the centralized references and the split summary"""
+  benchmark/ : federated FA-MLP runs on the same clients and seeds (10 and 50 clients), centralized references and the
+               split summary, taken from the public fedids-leakfree-benchmark release (https://doi.org/10.5281/zenodo.23483716)
+Also recomputes the row-normalized confusion matrices from the saved test predictions, the 50-client sizes and the
+modeled transfer times in hours and minutes."""
 import json, glob, os, sys, numpy as np, pandas as pd
 from scipy import stats
 from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score, matthews_corrcoef
@@ -112,6 +114,16 @@ for sp in ('random', 'time'):
     for c, v in zip(CLS, np.bincount(YT[sp], minlength=NC) / len(YT[sp])): F[f'trueshare|{sp}|{c}'] = float(v)
     F[f'data|{sp}|test_n'] = int(len(YT[sp]))
 
+# ---------- confusion matrices on the time-block split with source-IP clients (row-normalized, summed over seeds) ----------
+from sklearn.metrics import confusion_matrix
+for tg in ('time_ip', 'random_ip'):
+    sp = tg.split('_')[0]
+    for m in ('ens', 'cyc', 'hist'):
+        d = f'{FT}/grid_hist' if m == 'hist' else f'{FT}/grid'
+        cm = sum(confusion_matrix(YT[sp], np.load(f'{d}/{tg}_{m}_s{s}_pred.npy').astype(int), labels=range(NC)) for s in SEEDS)
+        rn = cm / cm.sum(1, keepdims=True)
+        for i, a_ in enumerate(CLS):
+            for j, b_ in enumerate(CLS): F[f'cm|{tg}|{m}|{a_}|{b_}'] = float(rn[i, j])
 # ---------- client composition ----------
 cc = pd.read_csv(f'{FT}/diag/client_class_counts.csv'); cc['k'] = (cc[CLS] > 0).sum(axis=1); cc['top'] = cc[CLS].max(axis=1) / cc.n
 for tg, g in cc.groupby('setting'):
@@ -167,7 +179,7 @@ LINKS = {'lan': (1e9, 0.001), 'wan': (100e6, 0.02), 'edge': (10e6, 0.05)}       
 for ln, (bw, rtt) in LINKS.items():
     for m, c in C.items():
         t = (c['up'] + c['down']) / K * 8 / bw + c['rounds'] * rtt   # mean traffic per client over its link + sequential round trips
-        F[f'linktime|{ln}|{m}|hours'] = t / 3600
+        F[f'linktime|{ln}|{m}|hours'] = t / 3600; F[f'linktime|{ln}|{m}|minutes'] = t / 60
     F[f'link|{ln}|Mbps'] = bw / 1e6; F[f'link|{ln}|rtt_ms'] = rtt * 1000
     F[f'rttonly|{ln}|hist|minutes'] = C['hist']['rounds'] * rtt / 60
 
@@ -194,5 +206,9 @@ if os.path.isdir(GX) and glob.glob(f'{GX}/*_s*.json'):
         F[f'k50|{m}|r100'] = float(np.mean([L(f'{BP}/random_dirichlet0.5_K50_m10_{m}_s{s}.json', (80, 90, 100)) for s in SEEDS]))
         F[f'k50|{m}|r500'] = float(np.mean([L(f'{BP}/random_dirichlet0.5_K50_m10_R500_{m}_s{s}.json', (480, 490, 500)) for s in SEEDS]))
     F['n_extra_runs'] = len(glob.glob(f'{GX}/*_s*.json')) - 1
+    CS = [J(f'{BP}/random_dirichlet0.5_K50_m10_fedavg_s{s}.json')['client_sizes'] for s in SEEDS]
+    F['k50|size_min'] = int(min(min(c) for c in CS)); F['k50|size_max'] = int(max(max(c) for c in CS)); F['k50|size_mean'] = float(np.mean([np.mean(c) for c in CS]))
+    F['k50|cyc|min'] = float(min(J(f'{GX}/random_dirichlet0.5_K50_cyc_s{s}.json')['final']['test_macro_f1'] for s in SEEDS))
+    F['comm|hist_k50_GB'] = F['comm|hist|total_GB'] * 5
 F['n_grid_runs'] = len(glob.glob(f'{FT}/grid/*_s*.json')); F['n_hist_runs'] = len(glob.glob(f'{FT}/grid_hist/*_hist_s*.json'))
 json.dump(F, open(OUT, 'w'), indent=1); print(len(F), 'facts ->', OUT)

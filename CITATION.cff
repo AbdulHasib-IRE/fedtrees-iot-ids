@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software or these results, please cite it as below."
 title: "fedtrees-iot-ids: federated gradient-boosted trees for IoT intrusion detection"
-version: 1.0.0
+version: 1.0.1
 date-released: 2026-10-26
 license: MIT
 repository-code: "https://github.com/AbdulHasib-IRE/fedtrees-iot-ids"
